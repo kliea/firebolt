@@ -103,6 +103,7 @@ def main():
     cap = setup_camera()
     angle_calculator = AngleCalculator()
     pump_on = False
+    frame_count = 0
     processing_state = {"detecting": True, "last_detection_time": 0, "frame_count": 0}
     pan_angle, tilt_angle = 0.0, 0.0
     try:
@@ -122,26 +123,41 @@ def main():
                 pan_angle, tilt_angle = angle_calculator.calculate_angles(
                     fire_coords[0], fire_coords[1], frame.shape[1], frame.shape[0]
                 )
-                if pan_angle is not None and tilt_angle is not None and pump_on:
-
+                if (
+                    pan_angle is not None
+                    and tilt_angle is not None
+                    and pump_on
+                    and frame_count >= 5
+                ):
+                    print("Frame is enough and it should be pumping")
+                    print(
+                        f"Required angles - Pan: {pan_angle:.2f}°, Tilt: {tilt_angle:.2f}°, Pumping: {pump_on}"
+                    )
                     # call move servo
                     # set_servo_angles(int(pan_angle), int(tilt_angle))
-                    time.sleep(2)
+                    time.sleep(5)
+                    frame_count = 0
                     # turn off pump
                     pump_on = not pump_on
-                elif pan_angle is not None and tilt_angle is not None and not pump_on:
+                elif (
+                    pan_angle is not None
+                    and tilt_angle is not None
+                    and not pump_on
+                    and frame_count < 5
+                ):
+                    print("Fire is detected but frame is not enough. Adding frame now")
+                    frame_count += 1
                     pump_on = True
-                    pass
                 else:
+                    print("Resetting frame")
+                    frame_count = 0
                     pan_angle = None
                     tilt_angle = None
                     pump_on = False
             text = (
                 f"Pan angle: {pan_angle}, tilt angle: {tilt_angle} pump on: {pump_on}"
             )
-            print(
-                f"Required angles - Pan: {pan_angle:.2f}°, Tilt: {tilt_angle:.2f}°, Pumping: {pump_on}"
-            )
+
             cv2.putText(
                 frame,
                 text,
