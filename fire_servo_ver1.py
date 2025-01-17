@@ -29,8 +29,8 @@ class FireTracker:
 class AngleCalculator:
     def __init__(self):
         # Camera specifications
-        self.camera_width = 640
-        self.camera_height = 480
+        self.camera_width = 1920
+        self.camera_height = 1080
         self.horizontal_fov = 62.2
         self.vertical_fov = 48.8
 
@@ -50,7 +50,7 @@ class AngleCalculator:
         pan_angle = 90 + (raw_pan * 90 / (self.horizontal_fov / 2))
 
         # Map tilt angle considering the downward mounting
-        tilt_angle = 90 - raw_tilt  # 90 degrees is straight down
+        tilt_angle = 90 - (raw_tilt * 90 / (self.vertical_fov / 2))
 
         # Clamp angles to valid servo range
         pan_angle = min(180, max(0, pan_angle))
