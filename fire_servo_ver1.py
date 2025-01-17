@@ -102,7 +102,7 @@ def main():
     model = initialize_model()
     cap = setup_camera()
     angle_calculator = AngleCalculator()
-
+    pump_on = False
     processing_state = {"detecting": True, "last_detection_time": 0, "frame_count": 0}
     pan_angle, tilt_angle = 0.0, 0.0
     try:
@@ -115,18 +115,33 @@ def main():
             processing_state["frame_count"] += 1
             if processing_state["frame_count"] % 2 != 0:
                 continue
+
             # Detect fire and calculate angles
             fire_coords = detect_fires(frame, model, processing_state)
             if fire_coords:
                 pan_angle, tilt_angle = angle_calculator.calculate_angles(
                     fire_coords[0], fire_coords[1], frame.shape[1], frame.shape[0]
                 )
-                if pan_angle is not None and tilt_angle is not None:
-                    print(
-                        f"Required angles - Pan: {pan_angle:.2f}°, Tilt: {tilt_angle:.2f}°"
-                    )
+                if pan_angle is not None and tilt_angle is not None and pump_on:
+
+                    # call move servo
                     # set_servo_angles(int(pan_angle), int(tilt_angle))
-            text = f"Pan angle: {pan_angle}, tilt angle: {tilt_angle}"
+                    time.sleep(2)
+                    # turn off pump
+                    pump_on = not pump_on
+                elif pan_angle is not None and tilt_angle is not None and not pump_on:
+                    pump_on = True
+                    pass
+                else:
+                    pan_angle = None
+                    tilt_angle = None
+                    pump_on = False
+            text = (
+                f"Pan angle: {pan_angle}, tilt angle: {tilt_angle} pump on: {pump_on}"
+            )
+            print(
+                f"Required angles - Pan: {pan_angle:.2f}°, Tilt: {tilt_angle:.2f}°, Pumping: {pump_on}"
+            )
             cv2.putText(
                 frame,
                 text,
@@ -137,6 +152,7 @@ def main():
                 thickness=2,
             )
             cv2.imshow("Camera", frame)
+
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
